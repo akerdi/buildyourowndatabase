@@ -1,23 +1,3 @@
-# Part 1
-
-这章主要讲解准备阶段，以及提前做好B+ 树概念，为Part 2 做铺垫。
-
-## 实现REPL、输入解析、内存数据表、写入磁盘
-
-数据准备阶段，数据结构为:
-
-```
-// 13个row满，有余空间
-|{id(4)+username(33)+email(256)}|{id(4)+username(33)+email(256)}|{id(4)+username(33)+email(256)}|...
-// 剩下2个row
-|{id(4)+username(33)+email(256)}|{id(4)+username(33)+email(256)}|
-```
-
-上面描述了15个row.
-
-下方为要准备的基础数据，先保证有大致印象。
-
-```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -28,7 +8,8 @@
 #include <unistd.h>
 
 // 对第一个字符为 '.' 原始输入命令的解析
-typedef enum {
+typedef enum
+{
   // 对.exit .help .btree 等命令识别，成功则LOOP
   META_COMMAND_SUCCESS,
   // 不识别报错
@@ -36,7 +17,8 @@ typedef enum {
 } MetaCommandResult;
 
 // 识别InputBuffer 类型，成功则转成Statement对象
-typedef enum {
+typedef enum
+{
   PREPARE_SUCCESS,
   PREPARE_SYNTAX_ERROR,
   PREPARE_STRING_TOO_LONG,
@@ -45,33 +27,38 @@ typedef enum {
 } PrepareResult;
 
 // 操作类型
-typedef enum {
+typedef enum
+{
   STATEMENT_INSERT,
   STATEMENT_SELECT
 } StatementType;
 
 // 执行结果状态码
-typedef enum {
+typedef enum
+{
   EXECUTE_SUCCESS,
   EXECUTE_DUPLICATE_KEY,
   EXECUTE_FULL_TABLE
 } ExecuteResult;
 
 // 输入原文的结构
-typedef struct {
-  char* buffer;
+typedef struct
+{
+  char *buffer;
   uint32_t buffer_length;
   uint32_t str_length;
 } InputBuffer;
 
-InputBuffer* new_input_buffer() {
-  InputBuffer* input_buffer = malloc(sizeof(InputBuffer));
+InputBuffer *new_input_buffer()
+{
+  InputBuffer *input_buffer = malloc(sizeof(InputBuffer));
   input_buffer->buffer = NULL;
   input_buffer->str_length = 0;
   input_buffer->buffer_length = 0;
   return input_buffer;
 }
-void del_input_buffer(InputBuffer* input_buffer) {
+void del_input_buffer(InputBuffer *input_buffer)
+{
   free(input_buffer->buffer);
   free(input_buffer);
 }
@@ -82,15 +69,17 @@ const uint32_t COLUMN_USERNAME = 32;
 const uint32_t COLUMN_EMAIL = 255;
 
 // Row 代表写入的表类型结构 |id(4)|username(33)|email(256)|
-typedef struct {
+typedef struct
+{
   uint32_t id;
   // +1 是为了给'\0'保留一位，下同
-  char username[COLUMN_USERNAME+1];
-  char email[COLUMN_EMAIL+1];
+  char username[COLUMN_USERNAME + 1];
+  char email[COLUMN_EMAIL + 1];
 } Row;
 
 // Statement 对象为操作对象
-typedef struct {
+typedef struct
+{
   StatementType type;
   Row row_to_insert;
 } Statement;
@@ -98,92 +87,103 @@ typedef struct {
 // 便捷宏
 #define FOELESS(less) for (int i = 0; i < less; i++)
 // 查看属性大小
-#define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
+#define size_of_attribute(Struct, Attribute) sizeof(((Struct *)0)->Attribute)
 
 // 以下描述字段大小，ROW_SIZE指真实数据大小
 const uint32_t ID_OFFSET = 0;
 const uint32_t ID_SIZE = size_of_attribute(Row, id);
-const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE; // 4
+const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;            // 4
 const uint32_t USERNAME_SIZE = size_of_attribute(Row, username); // 33
-const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE; // 37 = 4 + 33
-const uint32_t EMAIL_SIZE = size_of_attribute(Row, email); // 256
-const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE; // 293 = 37 + 256
+const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;   // 37 = 4 + 33
+const uint32_t EMAIL_SIZE = size_of_attribute(Row, email);       // 256
+const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;  // 293 = 37 + 256
 
 // 缓存按整块读取大小4 kilobytes(极大多数系统架构的虚拟内存的page大小都为4kb)，如果每次都读整块，那读写效率是最大的
 const uint32_t PAGE_SIZE = 4096;
-const uint32_t TABLE_MAX_PAGES = 100; // 模拟有100页
-const uint32_t ROW_PER_PAGES = PAGE_SIZE / ROW_SIZE; // 13 = 4096 / 293
+const uint32_t TABLE_MAX_PAGES = 100;                            // 模拟有100页
+const uint32_t ROW_PER_PAGES = PAGE_SIZE / ROW_SIZE;             // 13 = 4096 / 293
 const uint32_t TABLE_MAX_ROWS = TABLE_MAX_PAGES * ROW_PER_PAGES; // 1300
 
 // 页面属性
-typedef struct {
-  void* pages[TABLE_MAX_PAGES];
+typedef struct
+{
+  void *pages[TABLE_MAX_PAGES];
   int file_descriptor;
   int file_length;
 } Pager;
 
 // Table属性
-typedef struct {
+typedef struct
+{
   // 保存页面数据，方便上下文获取
-  Pager* pager;
+  Pager *pager;
   // 记录当前已有的row数据量，读入、写入
   uint32_t row_nums;
 } Table;
 // 根据打开的文件，返回出Table上下文
-Table* db_open(const char* filename);
-void print_row(Row* row) {
+Table *db_open(const char *filename);
+void print_row(Row *row)
+{
   printf("(%d %s %s)\n", row->id, row->username, row->email);
 }
 // 读取用户输入
-void read_line(InputBuffer* input_buffer) {
+void read_line(InputBuffer *input_buffer)
+{
   ssize_t bytes_read = getline(&input_buffer->buffer, &input_buffer->buffer_length, stdin);
-  if (bytes_read == -1) {
+  if (bytes_read == -1)
+  {
     printf("get user input error: %s.\n", strerror(errno));
     exit(EXIT_FAILURE);
   }
-  input_buffer->buffer[strlen(input_buffer->buffer)-1] = '\0';
+  input_buffer->buffer[strlen(input_buffer->buffer) - 1] = '\0';
   input_buffer->str_length = strlen(input_buffer->buffer);
 }
 // InputBuffer -> Statement
-PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
-    static char* token = " ";
-    strtok(input_buffer->buffer, token);
-    char* idStr = strtok(NULL, token);
-    char* username = strtok(NULL, token);
-    char* email = strtok(NULL, token);
-    if (!idStr || !username || !email) {
-        return PREPARE_SYNTAX_ERROR;
-    }
-    uint32_t id = atoi(idStr);
-    if (id < 0) {
-        return PREPARE_NEGATIVE_ID;
-    }
-    if (strlen(username) > COLUMN_USERNAME) {
-        return PREPARE_STRING_TOO_LONG;
-    }
-    if (strlen(email) > COLUMN_EMAIL) {
-        return PREPARE_STRING_TOO_LONG;
-    }
-    statement->type = STATEMENT_INSERT;
-    statement->row_to_insert.id = id;
-    strcpy(statement->row_to_insert.username, username);
-    strcpy(statement->row_to_insert.email, email);
-    return PREPARE_SUCCESS;
+PrepareResult prepare_insert(InputBuffer *input_buffer, Statement *statement)
+{
+  static char *token = " ";
+  strtok(input_buffer->buffer, token);
+  char *idStr = strtok(NULL, token);
+  char *username = strtok(NULL, token);
+  char *email = strtok(NULL, token);
+  if (!idStr || !username || !email)
+  {
+    return PREPARE_SYNTAX_ERROR;
+  }
+  uint32_t id = atoi(idStr);
+  if (id < 0)
+  {
+    return PREPARE_NEGATIVE_ID;
+  }
+  if (strlen(username) > COLUMN_USERNAME)
+  {
+    return PREPARE_STRING_TOO_LONG;
+  }
+  if (strlen(email) > COLUMN_EMAIL)
+  {
+    return PREPARE_STRING_TOO_LONG;
+  }
+  statement->type = STATEMENT_INSERT;
+  statement->row_to_insert.id = id;
+  strcpy(statement->row_to_insert.username, username);
+  strcpy(statement->row_to_insert.email, email);
+  return PREPARE_SUCCESS;
 }
 // InputBuffer -> Statement 入口
-PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
-    if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
-        return prepare_insert(input_buffer, statement);
-    }
-    if (strcmp(input_buffer->buffer, "select") == 0) {
-        statement->type = STATEMENT_SELECT;
-        return PREPARE_SUCCESS;
-    }
-    return PREPARE_UNRECOGNIZED_STATEMENT;
+PrepareResult prepare_statement(InputBuffer *input_buffer, Statement *statement)
+{
+  if (strncmp(input_buffer->buffer, "insert", 6) == 0)
+  {
+    return prepare_insert(input_buffer, statement);
+  }
+  if (strcmp(input_buffer->buffer, "select") == 0)
+  {
+    statement->type = STATEMENT_SELECT;
+    return PREPARE_SUCCESS;
+  }
+  return PREPARE_UNRECOGNIZED_STATEMENT;
 }
-```
 
-```c
 int main(int argc, char **argv)
 {
   char *filename;
@@ -241,7 +241,3 @@ int main(int argc, char **argv)
   }
   return 0;
 }
-```
-
-我们先从db_open 和 .exit 时将数据保存的动作入手，此时数据没有顺序，存入时整页保存4096 bytes，剩下的就附加写入；取出时，read_bytes / 293 得到row 个数(有余数不精确，先不解决)。
-
