@@ -10,3 +10,5 @@
 
 + [Part 1 - 浓缩讲解 1~7张](./part1.md)
 + [Part 2 - B-Tree 叶子结点](./part2.md)
+
+[VSCode cpp格式化参考](https://zhuanlan.zhihu.com/p/356143396)

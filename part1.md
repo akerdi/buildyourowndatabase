@@ -243,5 +243,93 @@ int main(int argc, char **argv)
 }
 ```
 
-我们先从db_open 和 .exit 时将数据保存的动作入手，此时数据没有顺序，存入时整页保存4096 bytes，剩下的就附加写入；取出时，read_bytes / 293 得到row 个数(有余数不精确，先不解决)。
+第一个数据结构版本:
 
+我们先从db_open 和 .exit 时将数据保存的动作入手，此时数据没有顺序，存入时整页保存4096 bytes，剩下的row就依次写入；取出时，read_bytes / 293 得到row 个数(有余数不精确，先不解决)。
+
+```c
+// open
+Pager* pager_open(const char* filename) {
+  int fd = open(filename, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+  if (fd == -1) {
+    printf("open file: %s error: %s.\n", filename, strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  // 使用lseek 移到SEEK_END知道文件大小
+  size_t read_bytes = lseek(fd, 0, SEEK_END);
+  if (read_bytes == -1) {
+    printf("seek file: %s error: %s.\n", filename, strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  Pager* pager = malloc(sizeof(Pager));
+  pager->file_descriptor = fd;
+  pager->file_length = read_bytes;
+  FORLESS(TABLE_MAX_PAGES) { pager->pages[i] = NULL; }
+  return pager;
+}
+Table* db_open(const char* filename) {
+  Pager* pager = pager_open(filename);
+  int num_rows = pager->file_length / ROW_SIZE;
+
+  Table* table = malloc(sizeof(Table));
+  table->pager = pager;
+  table->row_nums = num_rows;
+  return table;
+}
+```
+
+```c
+// close & flush
+void pager_flush(Pager* pager, uint32_t page_num, uint32_t size) {
+  if (pager->pages[page_num] == NULL) {
+    printf("flush error by empty page at %d, size: %d .\n", page_num, size);
+    exit(EXIT_FAILURE);
+  }
+  off_t offset = lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
+  if (offset == -1) {
+    printf("flush seek page at %d, error: %s.\n", page_num, strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  ssize_t write_bytes =
+      write(pager->file_descriptor, pager->pages[page_num], size);
+  if (write_bytes == -1) {
+    printf("flush write page at %d, error: %s.\n", page_num, strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+}
+void db_close(Table* table) {
+  Pager* pager = table->pager;
+  uint32_t full_num_rows = table->row_nums / ROW_SIZE;
+  FORLESS(full_num_rows) {
+    if (pager->pages[i] != NULL) {
+      pager_flush(pager, i, PAGE_SIZE);
+      free(pager->pages[i]);
+      pager->pages[i] = NULL;
+    }
+  }
+  uint32_t additional_num_rows = table->row_nums % ROW_SIZE;
+  if (additional_num_rows > 0) {
+    const page_num = full_num_rows;
+    if (pager->pages[page_num] != NULL) {
+      pager_flush(pager, page_num, additional_num_rows * ROW_SIZE);
+      free(pager->pages[page_num]);
+      pager->pages[page_num] = NULL;
+    }
+  }
+  int result = close(pager->file_descriptor);
+  if (result == -1) {
+    printf("close file error: %s!\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+  FORLESS(TABLE_MAX_PAGES) {
+    if (pager->pages[i] != NULL) {
+      pager->pages[i] = NULL;
+    }
+  }
+  del_table(table);
+}
+```
+
+接下来是将InputBuffer 转为statement。这块属于简单单一功能，识别文本前缀，直接看代码。
+
+我们直接到execute_statement.
