@@ -333,3 +333,99 @@ void db_close(Table* table) {
 接下来是将InputBuffer 转为statement。这块属于简单单一功能，识别文本前缀，直接看代码。
 
 我们直接到execute_statement.
+
+```c
+// 选择功能
+ExecuteResult execute_select(Statement* statement, Table* table) {
+  Row row;
+  // 简单处理，select时打印全部
+  FORLESS(table->row_nums) {
+    // 找到i在哪个page的offset 偏移内存点
+    void* page = page_slot(table, i);
+    // 将该内存信息赋到row中
+    deserialize_row(&row, page);
+    print_row(&row);
+  }
+  return EXECUTE_SUCCESS;
+}
+```
+
+page_slot 的作用是为了获取row_index 在内存中的位置:
+
+```c
+void* page_slot(Table* table, uint32_t row_num) {
+  Pager* pager = table->pager;
+  // 首先找到page_num
+  uint32_t page_num = row_num / ROW_PER_PAGES;
+  // 根据page_num 找到页面的指针
+  void* page = get_page(pager, page_num);
+  // 查看row_num 的偏移量，根据偏移量算出内存偏移量
+  uint32_t offset = row_num % ROW_PER_PAGES;
+  ssize_t offset_bytes = offset * ROW_SIZE;
+  return page + offset_bytes;
+}
+```
+
+其中get_page 作用就是根据page_num 在pager->pages 中找到对应的内存数据，如果没有，那就创建一个；并且根据pager->file_length 对比是否大于查询的page_num, 超过则将文件内容复制给已申请的内存:
+
+```c
+void* get_page(Pager* pager, uint32_t page_num) {
+  if (pager->pages[page_num] == NULL) {
+    void* page = malloc(PAGE_SIZE);
+    // 判别原始文件内容大于查询页码
+    uint32_t file_page_full_num = pager->file_length / PAGE_SIZE;
+    if (pager->file_length % PAGE_SIZE) {
+      file_page_full_num += 1;
+    }
+    // 超过则将文件数据拷贝给page内存
+    if (file_page_full_num >= page_num) {
+      off_t offset =
+          lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
+      if (offset == -1) {
+        printf("get page error seek: %s.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+      }
+      ssize_t read_bytes = read(pager->file_descriptor, page, PAGE_SIZE);
+      if (read_bytes == -1) {
+        printf("get page error read: %s.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+      }
+    }
+    pager->pages[page_num] = page;
+  }
+  return pager->pages[page_num];
+}
+```
+
+select 最后, 将内存数据拷贝给对象数据:
+
+```c
+void deserialize_row(Row* target, void* source) {
+  memcpy(&target->id, source + ID_OFFSET, ID_SIZE);
+  memcpy(&target->username, source + USERNAME_OFFSET, USERNAME_SIZE);
+  memcpy(&target->email, source + EMAIL_OFFSET, EMAIL_SIZE);
+}
+```
+
+上面实现了select, 接下来insert。insert 根据table->row_nums，每次insert 之后，table->row_nums++:
+
+```c
+ExecuteResult execute_insert(Statement* statement, Table* table) {
+  Row* row_to_insert = &statement->row_to_insert;
+  void* page = page_slot(table, table->row_nums);
+  serialize_row(page, row_to_insert);
+  table->row_nums++;
+  return EXECUTE_SUCCESS;
+}
+```
+
+## 测试
+
+insert 到内存，.exit 保存到文件；open 之后数据回来:
+
+    $./part1 aa.db
+    $> insert 1 1 1 // Executed.
+    $> select // (1 1 1)
+    $> .exit // 关闭
+    $>./part1 aa.db
+    $> select // (1 1 1)

@@ -131,6 +131,80 @@ void read_line(InputBuffer* input_buffer) {
   input_buffer->buffer[strlen(input_buffer->buffer) - 1] = '\0';
   input_buffer->str_length = strlen(input_buffer->buffer);
 }
+
+void* get_page(Pager* pager, uint32_t page_num) {
+  if (pager->pages[page_num] == NULL) {
+    void* page = malloc(PAGE_SIZE);
+    // 判别原始文件内容大于查询页码
+    uint32_t file_page_full_num = pager->file_length / PAGE_SIZE;
+    if (pager->file_length % PAGE_SIZE) {
+      file_page_full_num += 1;
+    }
+    // 超过则将文件数据拷贝给page内存
+    if (file_page_full_num >= page_num) {
+      off_t offset =
+          lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
+      if (offset == -1) {
+        printf("get page error seek: %s.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+      }
+      ssize_t read_bytes = read(pager->file_descriptor, page, PAGE_SIZE);
+      if (read_bytes == -1) {
+        printf("get page error read: %s.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+      }
+    }
+    pager->pages[page_num] = page;
+  }
+  return pager->pages[page_num];
+}
+
+void deserialize_row(Row* target, void* source) {
+  memcpy(&target->id, source + ID_OFFSET, ID_SIZE);
+  memcpy(&target->username, source + USERNAME_OFFSET, USERNAME_SIZE);
+  memcpy(&target->email, source + EMAIL_OFFSET, EMAIL_SIZE);
+}
+void serialize_row(void* target, Row* source) {
+  memcpy(target + ID_OFFSET, &source->id, ID_SIZE);
+  memcpy(target + USERNAME_OFFSET, &source->username, USERNAME_SIZE);
+  memcpy(target + EMAIL_OFFSET, &source->email, EMAIL_SIZE);
+}
+
+void* page_slot(Table* table, uint32_t row_num) {
+  Pager* pager = table->pager;
+  uint32_t page_num = row_num / ROW_PER_PAGES;
+  void* page = get_page(pager, page_num);
+  uint32_t offset = row_num % ROW_PER_PAGES;
+  ssize_t offset_bytes = offset * ROW_SIZE;
+  return page + offset_bytes;
+}
+
+ExecuteResult execute_insert(Statement* statement, Table* table) {
+  Row* row_to_insert = &statement->row_to_insert;
+  void* page = page_slot(table, table->row_nums);
+  serialize_row(page, row_to_insert);
+  table->row_nums++;
+  return EXECUTE_SUCCESS;
+}
+ExecuteResult execute_select(Statement* statement, Table* table) {
+  Row row;
+  // 简单处理，select时打印全部
+  FORLESS(table->row_nums) {
+    // 找到i在哪个page的offset 偏移内存点
+    void* page = page_slot(table, i);
+    deserialize_row(&row, page);
+    print_row(&row);
+  }
+  return EXECUTE_SUCCESS;
+}
+ExecuteResult execute_statement(Statement* statement, Table* table) {
+  switch (statement->type) {
+  case STATEMENT_INSERT:
+    return execute_insert(statement, table);
+  case STATEMENT_SELECT:
+    return execute_select(statement, table);
+  }
+}
 // InputBuffer -> Statement
 PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
   static char* token = " ";
@@ -239,7 +313,7 @@ void pager_flush(Pager* pager, uint32_t page_num, uint32_t size) {
 }
 void db_close(Table* table) {
   Pager* pager = table->pager;
-  uint32_t full_num_rows = table->row_nums / ROW_SIZE;
+  uint32_t full_num_rows = table->row_nums / ROW_PER_PAGES;
   FORLESS(full_num_rows) {
     if (pager->pages[i] != NULL) {
       pager_flush(pager, i, PAGE_SIZE);
@@ -247,7 +321,7 @@ void db_close(Table* table) {
       pager->pages[i] = NULL;
     }
   }
-  uint32_t additional_num_rows = table->row_nums % ROW_SIZE;
+  uint32_t additional_num_rows = table->row_nums % ROW_PER_PAGES;
   if (additional_num_rows > 0) {
     const page_num = full_num_rows;
     if (pager->pages[page_num] != NULL) {
