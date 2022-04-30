@@ -341,7 +341,7 @@ ExecuteResult execute_select(Statement* statement, Table* table) {
   // 简单处理，select时打印全部
   FORLESS(table->row_nums) {
     // 找到i在哪个page的offset 偏移内存点
-    void* page = page_slot(table, i);
+    void* page = row_slot(table, i);
     // 将该内存信息赋到row中
     deserialize_row(&row, page);
     print_row(&row);
@@ -350,10 +350,10 @@ ExecuteResult execute_select(Statement* statement, Table* table) {
 }
 ```
 
-page_slot 的作用是为了获取row_index 在内存中的位置:
+row_slot 的作用是为了获取row_index 在内存中的位置:
 
 ```c
-void* page_slot(Table* table, uint32_t row_num) {
+void* row_slot(Table* table, uint32_t row_num) {
   Pager* pager = table->pager;
   // 首先找到page_num
   uint32_t page_num = row_num / ROW_PER_PAGES;
@@ -412,7 +412,7 @@ void deserialize_row(Row* target, void* source) {
 ```c
 ExecuteResult execute_insert(Statement* statement, Table* table) {
   Row* row_to_insert = &statement->row_to_insert;
-  void* page = page_slot(table, table->row_nums);
+  void* page = row_slot(table, table->row_nums);
   serialize_row(page, row_to_insert);
   table->row_nums++;
   return EXECUTE_SUCCESS;

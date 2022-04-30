@@ -109,6 +109,35 @@ typedef struct {
   uint32_t row_nums;
 } Table;
 
+typedef struct {
+  Table* table;
+  uint32_t row_num;
+  bool end_of_table;
+} Cursor;
+
+Cursor* table_start(Table* table) {
+  Cursor* cursor = malloc(sizeof(Cursor));
+  cursor->table = table;
+  cursor->row_num = 0;
+  cursor->end_of_table = table->row_nums == 0;
+
+  return cursor;
+}
+Cursor* table_end(Table* table) {
+  Cursor* cursor = malloc(sizeof(Cursor));
+  cursor->table = table;
+  cursor->row_num = table->row_nums;
+  cursor->end_of_table = true;
+
+  return cursor;
+}
+void cursor_advance(Cursor* cursor) {
+  cursor->row_num += 1;
+  if (cursor->row_num == cursor->table->row_nums) {
+    cursor->end_of_table = true;
+  }
+}
+
 void del_table(Table* table) {
   free(table->pager);
   table->pager = NULL;
@@ -170,8 +199,10 @@ void serialize_row(void* target, Row* source) {
   memcpy(target + EMAIL_OFFSET, &source->email, EMAIL_SIZE);
 }
 
-void* row_slot(Table* table, uint32_t row_num) {
-  Pager* pager = table->pager;
+void* cursor_value(Cursor* cursor) {
+  Pager* pager = cursor->table->pager;
+  uint32_t row_num = cursor->row_num;
+
   uint32_t page_num = row_num / ROW_PER_PAGES;
   void* page = get_page(pager, page_num);
   uint32_t offset = row_num % ROW_PER_PAGES;
@@ -181,20 +212,27 @@ void* row_slot(Table* table, uint32_t row_num) {
 
 ExecuteResult execute_insert(Statement* statement, Table* table) {
   Row* row_to_insert = &statement->row_to_insert;
-  void* page = row_slot(table, table->row_nums);
+  Cursor* cursor = table_end(table);
+  void* page = cursor_value(cursor);
   serialize_row(page, row_to_insert);
   table->row_nums++;
+
+  free(cursor);
   return EXECUTE_SUCCESS;
 }
 ExecuteResult execute_select(Statement* statement, Table* table) {
   Row row;
+  Cursor* cursor = table_start(table);
   // 简单处理，select时打印全部
-  FORLESS(table->row_nums) {
+  while (cursor->end_of_table) {
     // 找到i在哪个page的offset 偏移内存点
-    void* page = row_slot(table, i);
+    void* page = cursor_value(cursor);
     deserialize_row(&row, page);
     print_row(&row);
+    cursor_advance(cursor);
   }
+  free(cursor);
+
   return EXECUTE_SUCCESS;
 }
 ExecuteResult execute_statement(Statement* statement, Table* table) {
