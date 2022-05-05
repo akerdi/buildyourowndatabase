@@ -8,7 +8,7 @@
 
 本讲义从part 1 ~ part 8 以文字描述描述，代码直接到part 8，且仅做代码测试不做测试用例，。重点难点其实就是part 8、part 10。
 
-+ [Part 1 - 浓缩讲解 1~7张](./part1.md)
++ [Part 1 - 浓缩讲解 1~7章](./part1.md)
 + [Part 2 - B-Tree 叶子结点](./part2.md)
 
 [VSCode cpp格式化参考](https://zhuanlan.zhihu.com/p/356143396)

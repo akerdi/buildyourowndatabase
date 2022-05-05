@@ -93,5 +93,96 @@ ExecuteResult execute_select(Statement* statement, Table* table) {
 
 当前能实现Part1 的测试
 
+    $./part1 aa.db
+    $> insert 1 1 1 // Executed.
+    $> select // (1 1 1)
+    $> .exit // 关闭
+    $>./part1 aa.db
+    $> select // (1 1 1)
+
 ## B+ Tree
 
+B-tree 是SQLite 用于构建原始数据和索引(indexes)的数据结构，所以他是相当核心的点。这个章节是用于介绍这个数据机构的。
+
+为什么对于一个database 这树形是个好的数据结构?
+
+* 找一个特定的值非常快(对数时间)
+* 插入/删除一个值非常快-你已知查找到的(恒定时间去重新平衡)
+* 遍历一段数值非常快(不像hash map，每个都分散存储)
+
+B-Tree 不同于二叉树('B' 可能表示的是发明者的名字，但是同样表示"balanced"). 这是一个B-Tree 示例:
+
+![example B-Tree](./images/part2/example_B-Tree.png)
+
+不像二叉树，每个B-Tree节点能够有超过2个子节点。每个节点可以有m个子节点，m被称为这个树的"order"。为了让树尽可能的平衡，我们就要让节点有超过至少 m/2 个子节点(四舍五入).
+
+例外的:
+
+* 叶子节点有0个子节点
+* root节点只能有少于m子节点，但是root至少有2个
+* 如果root节点是叶子节点(只有一个节点)，他仍然只有0个子节点
+
+上面图片就是一个B-Tree，SQLite 用来保存索引数据。为了保存表，SQLites 用变种的B+ Tree。
+
+| | B-tree|B+tree|
+|-|-|-|
+|Pronounced|“Bee Tree”|“Bee Plus Tree”|
+|Used to store|Indexes|Tables|
+|Internal nodes store keys|Yes|Yes|
+|Internal nodes store values|Yes|No|
+|Number of children per node|Less|More|
+|Internal nodes vs. leaf nodes|Same structure|Different structure|
+
+我们在实现索引之前，我们要单独讲下B+ 树，不过我们会以B-tree 对比参考来讲解。
+
+那个拥有子节点的Nodes 我们称之为"internal"("内部")节点。内部节点和叶子节点构造是不同的:
+
+|**For an order-m tree…**|**Internal Node**|**Leaf Node**|
+|-|-|-|
+|Stores|keys and pointers to children|keys and values|
+|Number of keys|up to m-1|as many as will fit|
+|Number of pointers|number of keys + 1|none|
+|Number of values|none|number of keys|
+|Key purpose|used for routing|paired with value|
+|Stores values?|No|Yes|
+
+让我们来个示例看下不断插入新的元素，B-tree是怎么增长的。为了简单，这个树会有3个阶级。这表明:
+
+* 一个内部节点最多有3个子节点
+* 一个内部节点最多2个keys
+* 一个内部节点至少2个子节点
+* 一个内部节点至少1个key
+
+一个空B-tree只有单个节点: 一个root节点。这个root节点从一个叶子节点开始，并且0个key/value 数据。
+
+![empty btree](./images/part2/empty_btree.png)
+
+如果我们插入一对数据，他们是被*排序好*放在叶子节点的。
+
+![one-node btree](./images/part2/one-node_btree.png)
+
+我们设定这个叶子节点的空间为两对key/value。如果我们想要插入另外一个，我们就需要为这个叶子节点分开，使用其中元素和一个匹配称为新的一对(保证之前的排序结对规则)。这时，所有的节点是*新的*子节点，并且之前保存元素的节点就变成了root节点。
+
+![two-level btree](./images/part2/two-level_btree.png)
+
+这个内部节点构造是1个key，2个pointers(节点坐标)。如果要找<=5的树，那么必定在左子树；>5必定在右子树。
+
+如果插入key"2"。第一步，我们查找哪个叶子节点是要去置放的，所以我们找到了左子树。这个节点满了，所以我们分开子树，生成新的子树，并在父节点增加节点坐标。
+
+![four-node btree](./images/part2/four-node_btree.png)
+
+继续增加keys。18和21. 我们现在需要不断的分开子树，但是父节点没有更多的空间来放其余的数据对 key/pointer。
+
+![no room in internal node](./images/part2/no_room_in_internal_node.png)
+
+解决办法就是分开root节点为两个新的节点，然后创建新root节点成为两个内部节点的父节点。
+
+![three-level btree](./images/part2/three-level_btree.png)
+
+数据树的高度(深度)只在我们分解root 节点时产生。每个叶子节点都是一样的高度并且接近相同数量的key/value，所以说树保留了平衡，并且支持快速搜索。
+
+我将推迟讨论从书中删除键的问题直到我们实现了插入的功能。(原作者木有实现哈)
+
+当我们实现这个数据结构，每个节点相当于一个页。root节点保留为page 0的节点坐标。子pointers 会简单的为页面number，对应number的页面保存对应的真实数据。
+
+接下来，我们开始实现btree!
