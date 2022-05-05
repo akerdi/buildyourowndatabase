@@ -1,4 +1,4 @@
-# Part 2
+# Part2
 
 这章代入Cursor。
 
