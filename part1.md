@@ -299,7 +299,8 @@ void pager_flush(Pager* pager, uint32_t page_num, uint32_t size) {
 }
 void db_close(Table* table) {
   Pager* pager = table->pager;
-  uint32_t full_num_rows = table->row_nums / ROW_SIZE;
+  // 计算需要写入的整页面数
+  uint32_t full_num_rows = table->row_nums / ROW_PER_PAGES;
   FORLESS(full_num_rows) {
     if (pager->pages[i] != NULL) {
       pager_flush(pager, i, PAGE_SIZE);
@@ -307,8 +308,10 @@ void db_close(Table* table) {
       pager->pages[i] = NULL;
     }
   }
-  uint32_t additional_num_rows = table->row_nums % ROW_SIZE;
+  // 多余的row数目也是要写入的，除余后将剩余在下一页补上
+  uint32_t additional_num_rows = table->row_nums % ROW_PER_PAGES;
   if (additional_num_rows > 0) {
+    // 下一页坐标，就是上面的full_num_rows
     const page_num = full_num_rows;
     if (pager->pages[page_num] != NULL) {
       pager_flush(pager, page_num, additional_num_rows * ROW_SIZE);
@@ -321,6 +324,7 @@ void db_close(Table* table) {
     printf("close file error: %s!\n", strerror(errno));
     exit(EXIT_FAILURE);
   }
+  // 将所有数据都释放掉
   FORLESS(TABLE_MAX_PAGES) {
     if (pager->pages[i] != NULL) {
       pager->pages[i] = NULL;
