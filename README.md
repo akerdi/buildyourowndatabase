@@ -13,3 +13,16 @@
 + [Part3 - 实现叶子节点](./part3.md)
 
 [VSCode cpp格式化参考](https://zhuanlan.zhihu.com/p/356143396)
+
+## Donate
+
+![wechat](./images/donate/wechatPay.jpeg)
+
+![alipay](./images/donate/aliPay.jpeg)
+
+## Contact me
+
+Feel free to contact me if you have any trouble on this project:
+
++ Create an issue.
++ Send mail to me, `tianxiaoxin001gmail.com
