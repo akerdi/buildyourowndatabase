@@ -14,9 +14,7 @@
 
 ## Donate
 
-![wechat](./images/donate/wechatPay.jpeg)
-
-![alipay](./images/donate/aliPay.jpeg)
+![wechat](./images/donate/wechatPay-8.jpeg)![alipay](./images/donate/aliPay-8.jpeg)
 
 ## Contact me
 
