@@ -25,4 +25,4 @@
 Feel free to contact me if you have any trouble on this project:
 
 + Create an issue.
-+ Send mail to me, `tianxiaoxin001gmail.com
++ Send mail to me, `tianxiaoxin001gmail.com`
