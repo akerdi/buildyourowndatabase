@@ -224,7 +224,7 @@ ExecuteResult execute_select(Statement* statement, Table* table) {
   Row row;
   Cursor* cursor = table_start(table);
   // 简单处理，select时打印全部
-  while (cursor->end_of_table) {
+  while (!cursor->end_of_table) {
     // 找到i在哪个page的offset 偏移内存点
     void* page = cursor_value(cursor);
     deserialize_row(&row, page);
