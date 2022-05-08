@@ -1,4 +1,4 @@
-#Part3
+# Part3
 
 我们要将我们的表结构从一个未排序的原始数据改为B-Tree。我们要在接下来的好多章节去实现这样一个相当大的改变。在Part3结束时，我们将实现定义叶子节点，并且支持插入 key/value 数据对到单一节点的树。在开始前，我们再次回顾下为什么我们要将数据结构换称为树形结构。
 
@@ -329,7 +329,8 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
     $> insert 3 3 3 // Executed.
     $> insert 1 1 1 // Executed.
     $> insert 2 2 2 // Executed.
-    $> .btree // leaf (size 3)
+    $> .btree // Tree:
+              // leaf (size 3)
               // -- 0 : 3
               // -- 1 : 1
               // -- 2 : 2

@@ -12,6 +12,7 @@
 + [Part2 - B-Tree 叶子结点](./part2.md)
 + [Part3 - 实现叶子节点](./part3.md)
 + [Part4 - 二分查找和报冲突键](./part4.md)
++ [Part5 - 分解叶子节点](./part5.md)
 + Doing. Coming soon.
 
 ## Donate
