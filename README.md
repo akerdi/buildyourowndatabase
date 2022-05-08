@@ -11,6 +11,8 @@
 + [Part1 - 浓缩讲解 1~7章](./part1.md)
 + [Part2 - B-Tree 叶子结点](./part2.md)
 + [Part3 - 实现叶子节点](./part3.md)
++ [Part4 - 二分查找和报冲突键](./part4.md)
++ Doing. Coming soon.
 
 ## Donate
 

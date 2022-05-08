@@ -125,7 +125,7 @@ const uint32_t IS_ROOT_SIZE = sizeof(uint8_t);
 const uint32_t IS_ROOT_OFFSET = NODE_TYPE_SIZE;
 const uint32_t PARENT_POINTER_SIZE = sizeof(uint32_t);
 const uint32_t PARENT_POINTER_OFFSET = IS_ROOT_OFFSET + IS_ROOT_SIZE;
-const uint32_t COMMON_NODE_HEADER_SIZE =
+const uint8_t COMMON_NODE_HEADER_SIZE =
     NODE_TYPE_SIZE + IS_ROOT_SIZE + PARENT_POINTER_SIZE;
 
 // 叶子节点的Header Layout
@@ -209,7 +209,7 @@ void cursor_advance(Cursor* cursor) {
   void* node = get_page(cursor->table->pager, page_num);
 
   cursor->cell_num += 1;
-  if (cursor->cell_num == (*leaf_node_num_cells(node))) {
+  if (cursor->cell_num >= (*leaf_node_num_cells(node))) {
     cursor->end_of_table = true;
   }
 }
