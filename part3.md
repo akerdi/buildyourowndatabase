@@ -336,3 +336,7 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
               // -- 2 : 2
 
 可以看到插入的数据还没有排序，待接下来继续优化。
+
+## Next
+
+[Part4 - 二分查找和报冲突键](./part4.md)

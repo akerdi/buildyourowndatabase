@@ -433,3 +433,7 @@ insert 到内存，.exit 保存到文件；open 之后数据回来:
     $> .exit // 关闭
     $>./part1 aa.db
     $> select // (1 1 1)
+
+## Next
+
+[Part2 - B-Tree 叶子结点](./part2.md)
