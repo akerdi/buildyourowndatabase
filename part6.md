@@ -64,4 +64,4 @@ Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
 
 ## Next
 
-[Part7 - ?](./part7.md)
+[Part7 - 多层遍历B-Tree](./part7.md)
