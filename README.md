@@ -15,8 +15,8 @@
 + [Part5 - 切分叶子节点、引出内部节点](./part5.md)
 + [Part6 - 内部节点查找](./part6.md)
 + [Part7 - 多层遍历B-Tree](./part7.md)
-+ [Part8 - ?](./part8.md)
-+ Doing. Coming soon.
++ [Part8 - 更新内部节点](./part8.md)
++ END.
 
 ## Donate
 

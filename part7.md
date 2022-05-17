@@ -82,4 +82,4 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
 
 ## Next
 
-[Part8 - ?](./part8.md)
+[Part8 - 更新内部节点](./part8.md)
