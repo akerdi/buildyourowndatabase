@@ -427,12 +427,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 
 insert 到内存，.exit 保存到文件；open 之后数据回来:
 
-    $./part1 aa.db
-    $> insert 1 1 1 // Executed.
-    $> select // (1 1 1)
-    $> .exit // 关闭
-    $>./part1 aa.db
-    $> select // (1 1 1)
+    $chmod +x part1.sh && ./part1.sh
 
 ## Next
 

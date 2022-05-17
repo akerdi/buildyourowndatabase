@@ -146,6 +146,10 @@ uint32_t* internal_node_key(void* node, uint32_t key_num) {
 
 因为`uint32_t*(*internal_node_cell)(void*, uint32_t)`返回的是 uint32_t*。INTERNAL_NODE_CHILD_SIZE = 4, 按照指针算数, 本意是 `+= 4`, 但是指针类型为`uint32_t*` 则表示 `4 * sizeof(uint32_t)` !
 
+## 测试
+
+    $chmod +x part8.sh && ./part8.sh
+
 ## END
 
 到这里，数据库的文章结束了。如果数据库要做更多的优化，基本是从当前功能展开。
