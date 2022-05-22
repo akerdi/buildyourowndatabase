@@ -360,14 +360,14 @@ uint32_t internal_node_find_child(void* node, uint32_t key) {
 }
 Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
   void* node = get_page(table->pager, page_num);
-  uint32_t min = internal_node_find_child(node, key);
-  uint32_t child_num = *internal_node_child(node, min);
-  void* child = get_page(table->pager, child_num);
+  uint32_t child_index = internal_node_find_child(node, key);
+  uint32_t child_page_num = *internal_node_child(node, child_index);
+  void* child = get_page(table->pager, child_page_num);
   switch (get_node_type(child)) {
   case NODE_INTERNAL:
-    return internal_node_find(table, child_num, key);
+    return internal_node_find(table, child_page_num, key);
   case NODE_LEAF:
-    return leaf_node_find(table, child_num, key);
+    return leaf_node_find(table, child_page_num, key);
   }
 }
 Cursor* table_find(Table* table, uint32_t key) {
@@ -581,6 +581,7 @@ void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value) {
     leaf_node_split_and_insert(cursor, key, value);
     return;
   }
+  // 如果指定生成的元素位置在中间(之前已判断未duplicate)，需要为改位置扩宽处空间存放数据
   if (cursor->cell_num < num_cells) {
     for (uint32_t i = num_cells; i > cursor->cell_num; i--) {
       memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i - 1),
@@ -598,7 +599,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
   Row* row_to_insert = &statement->row_to_insert;
   uint32_t key_to_insert = row_to_insert->id;
   Cursor* cursor = table_find(table, key_to_insert);
-
+  // 如果指定生成的元素位置在中间，需要判别是否报错插入了相同的元素
   if (cursor->cell_num < num_cells) {
     uint32_t key_at_index = *leaf_node_key(node, cursor->cell_num);
     if (key_at_index == key_to_insert) {
