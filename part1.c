@@ -254,13 +254,13 @@ int main(int argc, char** argv) {
     InputBuffer* input_buffer = new_input_buffer();
     read_line(input_buffer);
 
-    // 对原字符进行识别是否有辅助指令
+    // 对原字符进行识别是否是辅助指令
     if (input_buffer->buffer[0] == '.') {
       switch (do_meta_command(input_buffer, table)) {
       case META_COMMAND_SUCCESS:
         continue;
       case META_COMMAND_UNRECOGNIZED:
-        printf("unrecognize command: %s.\n", input_buffer->buffer);
+        printf("unrecognized command: %s.\n", input_buffer->buffer);
         continue;
       }
     }

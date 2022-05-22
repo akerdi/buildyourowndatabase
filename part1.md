@@ -1,19 +1,23 @@
 # Part1
 
-这章主要讲解准备阶段，以及提前做好B+ 树概念，为Part 2 做铺垫。
+这章主要讲解准备阶段，以及支持最简单的数据存储方案。
 
 ## 实现REPL、输入解析、内存数据表、写入磁盘
 
-数据准备阶段，数据结构为:
+因为绝大多数电脑架构中虚拟内存页面大小就是4096, 4k大小。这也就表示我们选取了4096作为一个Page大小，对应操作系统使用的虚拟内存大小。存取是最快的。
+
+当前章节模拟有100页；到了后面章节-树形结构时，数量限制将是一个文件大小的限制。
+
+贯穿整个文章示例，我们想实现`Row {uint32_t id; char username[33]; char email[256]; }`，也就是一个Row占据了293 = 4 + 33 + 256; 一个Page能放下多少个Row呢？13 = 4096 / 293, 对，只能放下13个Row，多余的空间暂不使用。
+
+初级数据存储如下示例，如果有15个Row，数据结构如下:
 
 ```
-// 13个row满，有余空间
-|{id(4)+username(33)+email(256)}|{id(4)+username(33)+email(256)}|{id(4)+username(33)+email(256)}|...
-// 剩下2个row
-|{id(4)+username(33)+email(256)}|{id(4)+username(33)+email(256)}|
+// Page1: 13个row满，有余空间
+|{<4>(id)+<33>(username)+<256>(email)}|{<4>(id)+<33>(username)+<256>(email)}|{<4>(id)+<33>(username)+<256>(email)}|...
+// Page2: 剩下2个row
+|{<4>(id)+<33>(username)+<256>(email)}|{<4>(id)+<33>(username)+<256>(email)}|
 ```
-
-上面描述了15个row.
 
 下方为要准备的基础数据，先保证有大致印象。
 
@@ -81,7 +85,7 @@ const uint32_t COLUMN_USERNAME = 32;
 // 指明email 大小为255字节
 const uint32_t COLUMN_EMAIL = 255;
 
-// Row 代表写入的表类型结构 |id(4)|username(33)|email(256)|
+// Row 代表写入的表类型结构 |<4>(id)|<33>(username)|<256>(email)|
 typedef struct {
   uint32_t id;
   // +1 是为了给'\0'保留一位，下同
@@ -184,35 +188,29 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
 ```
 
 ```c
-int main(int argc, char **argv)
-{
-  char *filename;
-  if (argc > 1)
-  {
+int main(int argc, char** argv) {
+  char* filename;
+  if (argc > 1) {
     filename = argv[1];
   }
-  Table *table = db_open(filename);
-  while (true)
-  {
+  Table* table = db_open(filename);
+  while (true) {
     printf("> ");
-    InputBuffer *input_buffer = new_input_buffer();
+    InputBuffer* input_buffer = new_input_buffer();
     read_line(input_buffer);
 
-    // 对原字符进行识别是否有辅助指令
-    if (input_buffer->buffer[0] == '.')
-    {
-      switch (do_meta_command(input_buffer, table))
-      {
+    // 对原字符进行识别是否是辅助指令
+    if (input_buffer->buffer[0] == '.') {
+      switch (do_meta_command(input_buffer, table)) {
       case META_COMMAND_SUCCESS:
         continue;
       case META_COMMAND_UNRECOGNIZED:
-        printf("unrecognize command: %s.\n", input_buffer->buffer);
+        printf("unrecognized command: %s.\n", input_buffer->buffer);
         continue;
       }
     }
     Statement statement;
-    switch (prepare_statement(input_buffer, &statement))
-    {
+    switch (prepare_statement(input_buffer, &statement)) {
     case PREPARE_SUCCESS:
       break;
     case PREPARE_NEGATIVE_ID:
@@ -228,8 +226,7 @@ int main(int argc, char **argv)
       printf("input unrecognized: %s.\n", input_buffer->buffer);
       continue;
     }
-    switch (execute_statement(&statement, table))
-    {
+    switch (execute_statement(&statement, table)) {
     case EXECUTE_SUCCESS:
       printf("Executed.\n");
       break;
@@ -331,6 +328,14 @@ void db_close(Table* table) {
     }
   }
   del_table(table);
+}
+MetaCommandResult do_meta_command(InputBuffer* intput_buffer, Table* table) {
+  // 模拟退出时保存数据
+  if (strcmp(intput_buffer->buffer, ".exit") == 0) {
+    db_close(table);
+    exit(EXIT_SUCCESS);
+  }
+  return META_COMMAND_UNRECOGNIZED;
 }
 ```
 
