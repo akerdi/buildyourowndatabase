@@ -80,6 +80,6 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     $> insert 14 14 14 // Executed.
     $> select // 展示所有的正确数据
 
-## Next
+## 下一章
 
 [Part8 - 更新内部节点](./part8.md)

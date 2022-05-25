@@ -62,6 +62,6 @@ Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
     $> insert 22 22 22 // Executed.
     $> insert 23 23 23 // Need to implement updating parent after
 
-## Next
+## 下一章
 
 [Part7 - 多层遍历B-Tree](./part7.md)

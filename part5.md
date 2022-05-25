@@ -296,6 +296,6 @@ void create_new_root(Table* table, uint32_t right_child_page_num) {
               //      - 14
     $> insert 15 15 15 // Need to implement searching an internal node
 
-## Next
+## 下一章
 
 [Part6 - 内部节点查找](./part6.md)

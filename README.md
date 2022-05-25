@@ -1,12 +1,12 @@
 # buildyourownsqlite
 
-制作一个sqlite，因为学着cstack 开源教程的[`Let's Build a Simple Database`](https://cstack.github.io/db_tutorial/)全部教程完结，综合网上没有找到合适的翻译、讲解教材，特此开此讲义以巩固自己的知识点。
+本讲义是给有C语言基础的人学习数据库知识准备的，如果还没有C语言基础的同学，推荐[阮一峰 C 语言教程](https://wangdoc.com/clang/), [buildyourownlisp](https://github.com/akerdi/buildyourownlisp).
 
-个人学习的时候，原作者讲解中，先说明了内容，铺垫在后面，学的时候就会感到疑惑。自己另一个翻译[Build your own lisp](https://github.com/akerdi/buildyourownlisp) 中先说明教义、再讲解内容，着实吃着很顺。并且原文如果有中文，学着也会更快，英文看得懂，但总归中文亲于英文的。
+基于cstack开源教程[`Let's Build a Simple Database`](https://cstack.github.io/db_tutorial/)中文翻译学习。
 
-学的快好处：对于打工仔，都是出卖白天的，晚上很累的时候学习时间已经很压缩了。一定要珍惜放大于3天的长假，整块的学习时间很珍贵。
+原作part 1 ~ part 6直接合并为一章(对应本讲义的[Part1 - 浓缩讲解 1~6章](./part1.md)). 原作使用ruby-rspec作为测试用例框架, 但是本讲义仅做代码测试(如[part1.sh](./part1.sh))。
 
-原作part 1 ~ part 6 以文字描述描述，代码直接到part 6(对应本讲义的[Part1 - 浓缩讲解 1~6章](./part1.md) )，且仅做代码测试不做测试用例。重点难点在本讲义是[Part3 - 实现叶子节点](./part3.md)、[Part5 - 切分叶子节点、引出内部节点](./part5.md)。
+重点难点在本讲义是[Part3 - 实现叶子节点](./part3.md)、[Part5 - 切分叶子节点、引出内部节点](./part5.md)这两个章节。
 
 + [Part1 - 浓缩讲解 1~6章](./part1.md)
 + [Part2 - B-Tree 叶子结点](./part2.md)
@@ -18,17 +18,14 @@
 + [Part8 - 更新内部节点](./part8.md)
 + END.
 
-## Donate
+## 请我喝杯咖啡
 
 ![wechat](./images/donate/wechatPay-8.jpeg)![alipay](./images/donate/aliPay-8.jpeg)
 
-## Contact me
+## 联系我
 
-Feel free to contact me if you have any trouble on this project:
+如果您有任何疑问都可以使用以下的方式联系到我:
 
-+ Create an issue.
-+ Send mail to me, `tianxiaoxin001gmail.com`
++ 新建一个issue.
++ 发送邮件给我, `tianxiaoxin001gmail.com`
 
-## Ref
-
-[VSCode cpp格式化参考](https://zhuanlan.zhihu.com/p/356143396)

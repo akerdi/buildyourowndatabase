@@ -4,20 +4,34 @@
 
 ## 实现REPL、输入解析、内存数据表、写入磁盘
 
-因为绝大多数电脑架构中虚拟内存页面大小就是4096, 4k大小。这也就表示我们选取了4096作为一个Page大小，对应操作系统使用的虚拟内存大小。存取是最快的。
+我们想实现这么一个对象:
 
-当前章节模拟有100页；到了后面章节-树形结构时，数量限制将是一个文件大小的限制。
+```c
+Row {
+  uint32_t id; // id 占 4 byte
+  char username[33]; // username 占 33 byte
+  char email[256]; // email 256 byte
+}
+```
 
-贯穿整个文章示例，我们想实现`Row {uint32_t id; char username[33]; char email[256]; }`，也就是一个Row占据了293 = 4 + 33 + 256; 一个Page能放下多少个Row呢？13 = 4096 / 293, 对，只能放下13个Row，多余的空间暂不使用。
+也就是一个Row占据了`4 + 33 + 256 = 293 byte`。
 
-初级数据存储如下示例，如果有15个Row，数据结构如下:
+因为绝大多数电脑架构中虚拟内存页面大小就是4096 byte(4k)大小, 所以我们选取了4096 byte 作为一个Page大小，对应操作系统使用的虚拟内存大小。存取是最快的。
+
+一个Page能放下多少个Row呢？`4096 byte / 293 byte = 13`, 对，只能放下13个Row，多余的空间暂不使用。
+
+当前章节以最大100Page(页)作为模拟数据的大小；到了后面章节"树形结构"时，Page(页面)数量限制取决于系统对单个文件大小的限制(文件系统FAT32格式，单个文件只能存放4G大小的内容)。
+
+假如有15个Row，数据结构如下:
 
 ```
-// Page1: 13个row满，有余空间
+// Page0: 13个row，多余空间(冗余)
 |{<4>(id)+<33>(username)+<256>(email)}|{<4>(id)+<33>(username)+<256>(email)}|{<4>(id)+<33>(username)+<256>(email)}|...
-// Page2: 剩下2个row
+// Page1: 存放剩下2个row
 |{<4>(id)+<33>(username)+<256>(email)}|{<4>(id)+<33>(username)+<256>(email)}|
 ```
+
+![page_row_struct](./images/part1/page_row_struct.jpg)
 
 下方为要准备的基础数据，先保证有大致印象。
 
@@ -430,10 +444,14 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 
 ## 测试
 
-insert 到内存，.exit 保存到文件；open 之后数据回来:
+    $chmod +x part1.sh && ./part1.sh # 执行测试脚本
 
-    $chmod +x part1.sh && ./part1.sh
+./part1.sh 测试脚本实现了如下流程:
 
-## Next
+1. `insert 到内存`，`select 查看内存数据`，`.exit 保存到文件`
+
+2. `select 查看内存数据还在`
+
+## 下一章
 
 [Part2 - B-Tree 叶子结点](./part2.md)

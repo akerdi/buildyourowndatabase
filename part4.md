@@ -127,6 +127,6 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
               // -- 2 : 3
     $> insert 3 3 3 // Error: Duplicate key.
 
-## Next
+## 下一章
 
 [Part5 - 切分叶子节点、引出内部节点](./part5.md)
