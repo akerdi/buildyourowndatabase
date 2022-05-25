@@ -135,12 +135,12 @@ void read_line(InputBuffer* input_buffer) {
 void* get_page(Pager* pager, uint32_t page_num) {
   if (pager->pages[page_num] == NULL) {
     void* page = malloc(PAGE_SIZE);
-    // 判别原始文件内容大于查询页码
+    // 查看是否需要从文件中读取，如果有的话
     uint32_t file_page_full_num = pager->file_length / PAGE_SIZE;
     if (pager->file_length % PAGE_SIZE) {
       file_page_full_num += 1;
     }
-    // 超过则将文件数据拷贝给page内存
+    // 说明文件中有数据，需要去获取对应的页面数据
     if (file_page_full_num >= page_num) {
       off_t offset =
           lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
