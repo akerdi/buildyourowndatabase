@@ -1,8 +1,8 @@
 # Part3
 
-我们要将我们的表结构从一个未排序的原始数据改为B-Tree。我们要在接下来的好多章节去实现这样一个相当大的改变。在Part3结束时，我们将实现定义叶子节点，并且支持插入 key/value 数据对到单一节点的树。在开始前，我们再次回顾下为什么我们要将数据结构换称为树形结构。
+我们要将表结构从一个未排序的原始数据改为B-Tree。我们要在接下来的好多章节去实现这样一个相当大的改变。在Part3结束时，我们将实现定义叶子节点，并且支持插入 key/value 数据对到单一节点的树。在开始前，我们再次回顾下为什么我们要将数据结构换称为树形结构。
 
-## Alternative Table Formats
+## 替换数据结构
 
 Part2中的数据结构中，每个页面仅保存rows(没有元数据)，这使得空间利用相当的有效率。插入也是非常快的因为我们就是直接拼接到最后嘛。然而，为了找到给定的row只能通过遍历整个table。如果要删除一个row，我们只能通过挪动后面的所有数据都往前一格来填补那个洞。
 
@@ -18,7 +18,7 @@ Part2中的数据结构中，每个页面仅保存rows(没有元数据)，这使
 |Deletion|O(n)|O(n)|O(log(n))|
 |Lookup by id|O(n)|O(log(n))|O(log(n))|
 
-## Node Header Format
+## 节点头元素
 
 首先定义一个NodeType:
 
@@ -63,10 +63,10 @@ void* leaf_node_cell(void* node, uint32_t cell_num) {
 }
 // 获取基于node指针的cell_num偏移地址的KEY地址
 uint32_t* leaf_node_key(void* node, uint32_t cell_num) {
-  return leaf_node_cell(node, cell_num);
+  return leaf_node_cell(node, cell_num) + LEAF_NODE_KEY_OFFSET;
 }
 // 获取基于node指针的cell_num偏移地址的VALUE地址
-uint32_t* leaf_node_key(void* node, uint32_t cell_num) {
+uint32_t* leaf_node_value(void* node, uint32_t cell_num) {
   return leaf_node_cell(node, cell_num) + LEAF_NODE_VALUE_OFFSET;
 }
 // 初始化node之下的cell number个数为0
@@ -77,11 +77,11 @@ void initialize_leaf_node(void* node) { *leaf_node_num_cells(node) = 0; }
 
 ![Our leaf node format](./images/part3/leaf-node-format.png)
 
-在每个页面头部放这些元数据在空间利用率下是有点低下的，但这使得我们让有效率的去拿到那些数据。
+在每个页面头部放这些元数据，在空间利用率上是有点低下的，但这使得我们更有效率的去拿到那些数据。
 
 上面这些方法便于找到内存点，并且方便读/写.
 
-## Changes to Pager and Table Objects
+## 改变Pager 和Table
 
 Pager、Table、Cursor对象变化
 
@@ -161,7 +161,7 @@ Table* db_open(const char* filename) {
 }
 ```
 
-为了知道页面数量，pager_open 时要获得；获取指定页面大于当前页面数量时，+1:
+为了知道文件中Page数量，pager_open 时要计算；获取指定页面大于当前页面数量时，Page数量 += 1:
 
 ```c
 Pager* pager_open(const char* filename) {
@@ -190,7 +190,7 @@ void* get_page(Pager* pager, uint32_t page_num) {
 }
 ```
 
-## Changes to the Cursor Object
+## 改变Cursor
 
 table_start / table_end / cursor_advance 方法记录更换:
 
@@ -238,9 +238,9 @@ void cursor_advance(Cursor* cursor) {
 
 以上完成了准备阶段，还差一点点完成叶子节点的数据插入。
 
-## Insertion Into a LeafNode
+## 插入到叶子节点
 
-这篇文章仅实现单个节点的树(相对之前插入数据量退化，当前仅能插入13个元素，但知识暂时的)。
+这篇文章仅实现单个节点的树(相对之前插入数据量退化，当前仅能插入13个元素，但只是暂时的)。
 
 修改execute_insert，1. 仅能插入 LEAF_NODE_MAX_CELLS; 2. serialize_row直接写入改为新方法 - void(*leaf_node_insert)(Cursor*, uint32_t, Row*):
 
@@ -283,7 +283,26 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 }
 ```
 
-## Command to Print
+并且`void* (*cursor_value)(Cursor* cursor)`方法也需要更改: 通过leaf_node_value 根据cursor->cell_num 直接获取到内存节点.
+
+```c
+void* cursor_value(Cursor* cursor) {
++ void* node = get_page(cursor->table->pager, cursor->page_num);
++ uint32_t row_num = cursor->cell_num;
++ return leaf_node_value(node, row_num);
+
+- uint32_t row_num = cursor->row_num;
+-
+- uint32_t page_num = row_num / ROW_PER_PAGES;
+- void* page = get_page(cursor->table->pager, page_num);
+-
+- uint32_t addition_row_num = row_num % ROW_PER_PAGES;
+- uint32_t addition_row_bytes = addition_row_num * ROW_SIZE;
+- return page + addition_row_bytes;
+}
+```
+
+## 打印方便函数
 
 补充下打印方便函数:
 

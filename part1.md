@@ -114,7 +114,7 @@ typedef struct {
 } Statement;
 
 // 便捷宏
-#define FOELESS(less) for (int i = 0; i < less; i++)
+#define FORLESS(less) for (int i = 0; i < less; i++)
 // 查看属性大小
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
 
@@ -147,6 +147,11 @@ typedef struct {
   // 记录当前已有的row数据量，读入、写入
   uint32_t row_nums;
 } Table;
+void del_table(Table* table) {
+  free(table->pager);
+  table->pager = NULL;
+  free(table);
+}
 // 根据打开的文件，返回出Table上下文
 Table* db_open(const char* filename);
 void print_row(Row* row) {
@@ -172,8 +177,9 @@ PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
     if (!idStr || !username || !email) {
         return PREPARE_SYNTAX_ERROR;
     }
-    uint32_t id = atoi(idStr);
-    if (id < 0) {
+    errno = 0;
+    uint32_t id = strtol(idStr, NULL, 10);
+    if (errno != 0) {
         return PREPARE_NEGATIVE_ID;
     }
     if (strlen(username) > COLUMN_USERNAME) {
@@ -427,6 +433,11 @@ void deserialize_row(Row* target, void* source) {
   memcpy(&target->id, source + ID_OFFSET, ID_SIZE);
   memcpy(&target->username, source + USERNAME_OFFSET, USERNAME_SIZE);
   memcpy(&target->email, source + EMAIL_OFFSET, EMAIL_SIZE);
+}
+void serialize_row(void* target, Row* source) {
+  memcpy(target + ID_OFFSET, &source->id, ID_SIZE);
+  memcpy(target + USERNAME_OFFSET, &source->username, USERNAME_SIZE);
+  memcpy(target + EMAIL_OFFSET, &source->email, EMAIL_SIZE);
 }
 ```
 

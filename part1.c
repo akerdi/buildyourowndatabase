@@ -215,8 +215,9 @@ PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
   if (!idStr || !username || !email) {
     return PREPARE_SYNTAX_ERROR;
   }
-  uint32_t id = atoi(idStr);
-  if (id < 0) {
+  errno = 0;
+  uint32_t id = strtol(idStr, NULL, 10);
+  if (errno != 0) {
     return PREPARE_NEGATIVE_ID;
   }
   if (strlen(username) > COLUMN_USERNAME) {

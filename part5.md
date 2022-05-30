@@ -48,7 +48,7 @@ internal_node的顺序如下行:
 
 ```c
 // 内部节点Header Layout
-const uint32_t INTERNAL_NODE_NUM_KEYS_SIZE = sizeof(uint32_t);
++const uint32_t INTERNAL_NODE_NUM_KEYS_SIZE = sizeof(uint32_t);
 +const uint32_t INTERNAL_NODE_NUM_KEYS_OFFSET = COMMON_NODE_HEADER_SIZE;
 +const uint32_t INTERNAL_NODE_RIGHT_CHILD_SIZE = sizeof(uint32_t);
 +const uint32_t INTERNAL_NODE_RIGHT_CHILD_OFFSET =
@@ -125,7 +125,7 @@ const uint32_t INTERNAL_NODE_NUM_KEYS_SIZE = sizeof(uint32_t);
 ```c
 // 附加子节点切分LEFT / RIGHT 数量; 其实都是数量7
 +const uint32_t LEAF_NODE_RIGHT_SPLIT_COUNT = (LEAF_NODE_MAX_CELLS + 1) / 2;
-+const uint32_t LEAF_NODE_LEFT_SPLIT_COUNT = (LEAF_NODE_MAX_CELLS + 1) - LEAF_NODE_RIGHT_SPLIT_COUNT
++const uint32_t LEAF_NODE_LEFT_SPLIT_COUNT = (LEAF_NODE_MAX_CELLS + 1) - LEAF_NODE_RIGHT_SPLIT_COUNT;
 
 void initialize_leaf_node(void* node) {
   set_node_type(node, NODE_LEAF);
@@ -269,32 +269,7 @@ void create_new_root(Table* table, uint32_t right_child_page_num) {
 
 ## 测试
 
-    $gcc part5.c -o test
-    $rm aa.db && ./test aa.db
-    $> insert 1 1 1 // Executed.
-    $> insert 2 2 2 // Executed.
-    $> // insert [ 3 ~ 12 ]// Executed.
-    $> insert 13 13 13 // Executed.
-    $> insert 14 14 14 // Executed.
-    $> .btree // Tree:
-              // - internal (size 1)
-              //   - leaf (size 7)
-              //      - 1
-              //      - 2
-              //      - 3
-              //      - 4
-              //      - 5
-              //      - 6
-              //      - 7
-              //    - key   - leaf (size 7)
-              //      - 8
-              //      - 9
-              //      - 10
-              //      - 11
-              //      - 12
-              //      - 13
-              //      - 14
-    $> insert 15 15 15 // Need to implement searching an internal node
+    $chmod +x part5.sh && ./part5.sh
 
 ## 下一章
 

@@ -38,7 +38,7 @@ Cursor* table_end(Table* table) {
 // select后主动cursor->row_num += 1; 并且判别是否偏移至末尾
 void cursor_advance(Cursor* cursor) {
   cursor->row_num += 1;
-  if (cursor->row_num == cursor->table->row_nums) {
+  if (cursor->row_num >= cursor->table->row_nums) {
     cursor->end_of_table = true;
   }
 }
@@ -52,7 +52,8 @@ void cursor_advance(Cursor* cursor) {
   Pager* pager = table->pager;
 + uint32_t row_num = cursor->row_num;
 
-  uint32_t page_num = row_num / ROW_PER_PAGES;
++ uint32_t page_num = row_num / ROW_PER_PAGES;
+  void* page = get_page(pager, page_num);
 ```
 
 在execute_insert/execute_select中使用Cursor:
@@ -62,7 +63,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
   Row* row_to_insert = &statement->row_to_insert;
 + Cursor* cursor = table_end(table);
 - void* page = row_slot(table, table->row_nums);
-+ void* page = cursor_value(cursor);
++ void* page = row_slot(cursor);
   serialize_row(page, row_to_insert);
   table->row_nums++;
 
