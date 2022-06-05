@@ -69,6 +69,33 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
 + *leaf_node_next_leaf(old_node) = new_page_num;
 ```
 
+最后，由于select会调用`void(*cursor_advance)(Cursor*)`获取下一个元素，并且判别是否到了末尾，所以此方法内我们做更新cursor->page_num 和判别end_of_table:
+
+```c
+void cursor_advance(Cursor* cursor) {
+-  cursor->cell_num += 1;
+-
+-  void* node = get_page(table->pager, cursor->page_num);
+-  if (cursor->cell_num >= *leaf_node_num_cells(node)) {
+-    cursor->end_of_table = true;
+-  }
++  uint32_t page_num = cursor->page_num;
++  void* node = get_page(cursor->table->pager, page_num);
++
++  cursor->cell_num += 1;
++  if (cursor->cell_num >= *leaf_node_num_cells(node)) {
++    // 拿出下一页坐标，next_page_num == 0 则表示没有下一页了; 否则进入新的一页
++    uint32_t next_page_num = *leaf_node_next_leaf(node);
++    if (next_page_num == 0) {
++      cursor->end_of_table = true;
++    } else {
++      cursor->page_num = next_page_num;
++      cursor->cell_num = 0;
++    }
++  }
+}
+```
+
 ## 测试
 
     $gcc part7.c -o test

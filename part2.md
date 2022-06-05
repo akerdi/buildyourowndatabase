@@ -63,7 +63,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
   Row* row_to_insert = &statement->row_to_insert;
 + Cursor* cursor = table_end(table);
 - void* page = row_slot(table, table->row_nums);
-+ void* page = row_slot(cursor);
++ void* page = cursor_value(cursor);
   serialize_row(page, row_to_insert);
   table->row_nums++;
 

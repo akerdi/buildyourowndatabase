@@ -167,44 +167,6 @@ void read_line(InputBuffer* input_buffer) {
   input_buffer->buffer[strlen(input_buffer->buffer)-1] = '\0';
   input_buffer->str_length = strlen(input_buffer->buffer);
 }
-// InputBuffer -> Statement
-PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
-    static char* token = " ";
-    strtok(input_buffer->buffer, token);
-    char* idStr = strtok(NULL, token);
-    char* username = strtok(NULL, token);
-    char* email = strtok(NULL, token);
-    if (!idStr || !username || !email) {
-        return PREPARE_SYNTAX_ERROR;
-    }
-    errno = 0;
-    uint32_t id = strtol(idStr, NULL, 10);
-    if (errno != 0) {
-        return PREPARE_NEGATIVE_ID;
-    }
-    if (strlen(username) > COLUMN_USERNAME) {
-        return PREPARE_STRING_TOO_LONG;
-    }
-    if (strlen(email) > COLUMN_EMAIL) {
-        return PREPARE_STRING_TOO_LONG;
-    }
-    statement->type = STATEMENT_INSERT;
-    statement->row_to_insert.id = id;
-    strcpy(statement->row_to_insert.username, username);
-    strcpy(statement->row_to_insert.email, email);
-    return PREPARE_SUCCESS;
-}
-// InputBuffer -> Statement 入口
-PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
-    if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
-        return prepare_insert(input_buffer, statement);
-    }
-    if (strcmp(input_buffer->buffer, "select") == 0) {
-        statement->type = STATEMENT_SELECT;
-        return PREPARE_SUCCESS;
-    }
-    return PREPARE_UNRECOGNIZED_STATEMENT;
-}
 ```
 
 ```c
@@ -359,11 +321,60 @@ MetaCommandResult do_meta_command(InputBuffer* intput_buffer, Table* table) {
 }
 ```
 
-接下来是将InputBuffer 转为statement。这块属于简单单一功能，识别文本前缀，直接看代码。
-
-我们直接到execute_statement.
+接下来是将InputBuffer 转为statement。这块属于简单单一功能，识别文本前缀，直接看代码:
 
 ```c
+// InputBuffer -> Statement
+PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
+    static char* token = " ";
+    strtok(input_buffer->buffer, token);
+    char* idStr = strtok(NULL, token);
+    char* username = strtok(NULL, token);
+    char* email = strtok(NULL, token);
+    if (!idStr || !username || !email) {
+        return PREPARE_SYNTAX_ERROR;
+    }
+    errno = 0;
+    uint32_t id = strtol(idStr, NULL, 10);
+    if (errno != 0) {
+        return PREPARE_NEGATIVE_ID;
+    }
+    if (strlen(username) > COLUMN_USERNAME) {
+        return PREPARE_STRING_TOO_LONG;
+    }
+    if (strlen(email) > COLUMN_EMAIL) {
+        return PREPARE_STRING_TOO_LONG;
+    }
+    statement->type = STATEMENT_INSERT;
+    statement->row_to_insert.id = id;
+    strcpy(statement->row_to_insert.username, username);
+    strcpy(statement->row_to_insert.email, email);
+    return PREPARE_SUCCESS;
+}
+// InputBuffer -> Statement 入口
+PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
+    if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
+        return prepare_insert(input_buffer, statement);
+    }
+    if (strcmp(input_buffer->buffer, "select") == 0) {
+        statement->type = STATEMENT_SELECT;
+        return PREPARE_SUCCESS;
+    }
+    return PREPARE_UNRECOGNIZED_STATEMENT;
+}
+```
+
+接下来到`execute_statement`, 由于上方已经准备好数据，下方执行时直接用就好了:
+
+```c
+ExecuteResult execute_statement(Statement* statement, Table* table) {
+  switch (statement->type) {
+  case STATEMENT_INSERT:
+    return execute_insert(statement, table);
+  case STATEMENT_SELECT:
+    return execute_select(statement, table);
+  }
+}
 // 选择功能
 ExecuteResult execute_select(Statement* statement, Table* table) {
   Row row;
