@@ -113,7 +113,7 @@ typedef struct {
 +void pager_flush(Pager* pager, uint32_t page_num) {
   ...
 - ssize_t write_bytes = write(pager->file_descriptor, pager->pages[page_num], size);
-+ ssize_t write_bytes = write(pager->file_descriptor, pager->pages[page_num]);
++ ssize_t write_bytes = write(pager->file_descriptor, pager->pages[page_num], PAGE_SIZE);
   ...
 
 void db_close(Table* table) {
@@ -151,7 +151,7 @@ Table* db_open(const char* filename) {
   Table* table = malloc(sizeof(Table));
   table->pager = pager;
 - table->num_rows = num_rows;
-+ table->row_page_num = 0;
++ table->root_page_num = 0;
 + if (pager->num_pages == 0) {
     // 当读取空数据库时，为内存数据写入num_cell个数为0
 +   void* root_node = get_page(pager, 0);
