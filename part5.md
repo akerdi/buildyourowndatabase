@@ -1,6 +1,6 @@
 # Part5
 
-这章目的是切分叶子节点，使得上一章节我们数据库仅能存储13个元素的尴尬。
+这章目的是插入数据达到最大数切分叶子节点，解决上一章节我们数据库仅能存储 13 个元素的尴尬。
 
 首先我们先删除之前超过叶子节点最大元素时的报错:
 
@@ -33,16 +33,16 @@ internal_node的顺序如下行:
 
 ![Our internal node format](./images/part5/out_internal_node_format.png)
 
-像上面这样摆放页面数据，因为子节点 pointer / key 占据如此小，可以容纳510 keys 和511 个子节点pointer(+1 right_child)。这表明我们不需要拿着一个key去遍历所有子节点内容!
+像上面这样摆放页面数据，因为子节点 pointer / key 占据如此小，可以容纳 510 keys 和 511 个子节点 pointer(+1 right_child)。这表明我们不需要拿着一个 key 去遍历所有子节点内容!
 
-|**# internal node layers**|**max # leaf nodes**|**Size of all leaf nodes**|
-|-|-|-|
-|0|511^0 = 1|4 KB|
-|1|511^1 = 512|~2 MB|
-|2|511^2 = 261,121|~1 GB|
-|3|511^3 = 133,432,831|~550 GB|
+| **# internal node layers** | **max # leaf nodes** | **Size of all leaf nodes** |
+| -------------------------- | -------------------- | -------------------------- |
+| 0                          | 511^0 = 1            | 4 KB                       |
+| 1                          | 511^1 = 512          | ~2 MB                      |
+| 2                          | 511^2 = 261,121      | ~1 GB                      |
+| 3                          | 511^3 = 133,432,831  | ~550 GB                    |
 
-实际上，我们不可能满足一个子节点把4kb全部填满，肯定有浪费的空间(wasted space). 但是我们仅仅通过从磁盘加载4个页面，就把500GB 的数据从内存中读取查找出来。这就是为什么B-Tree 对于数据库是那么重要的数据结构了。
+实际上，我们不可能满足一个子节点把 4kb 全部填满，肯定有浪费的空间(wasted space). 但是我们仅仅通过从磁盘加载 4 个页面，就把 500GB 的数据从内存中读取查找出来。这就是为什么 B-Tree 对于数据库是那么重要的数据结构了。
 
 接下来我们增加一些内部节点的数据:
 
@@ -120,7 +120,7 @@ internal_node的顺序如下行:
 +uint32_t get_unused_page_num(Pager* pager) { return pager->num_pages; }
 ```
 
-叶子节点遍历函数initialize时, set_node_root 为false, 并且`Table*(*db_open)(const char* filename)`发现是首次打开时，root_node设置set_node_root 为true:
+叶子节点遍历函数 initialize 时, set_node_root 为 false, 并且`Table*(*db_open)(const char* filename)`发现是首次打开时，root_node 设置 set_node_root 为 true:
 
 ```c
 // 附加子节点切分LEFT / RIGHT 数量; 其实都是数量7
@@ -209,7 +209,7 @@ void create_new_root(Table* table, uint32_t right_child_page_num) {
 }
 ```
 
-以上实现了本章的目标: 切分叶子节点(14 + 1 = x + (15-x)), 先切出来right_child, 然后再切出来left_child, 然后设置root节点后，写入各自数据。
+以上实现了本章的目标: 切分叶子节点(14 + 1 = x + (15-x)), 先切出来 right_child, 然后再切出来 left_child, 然后设置 root 节点后，写入各自数据。
 
 补充打印数据，方便查看:
 

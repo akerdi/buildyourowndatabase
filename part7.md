@@ -1,10 +1,10 @@
 # Part7
 
-上一章节后，我们发现select 时，数据是 (2 1 1).
+上一章节后，我们发现 select 时，数据是 (2 1 1).
 
-原因是select 仅找了root节点，2 1 1对应之前留下的的数据。所以这章就是解决select，并且是多个节点间select。
+原因是 select 仅找了 root 节点，2 1 1 对应之前留下的的数据。所以这章就是解决 select，并且是多个节点间 select。
 
-首先修复table_start，他的作用是通过`Cursor*(*table_start)(Table* table, uint32_t key)`根据键找对正确内存坐标:
+首先修复 table_start，他的作用是通过`Cursor*(*table_start)(Table* table, uint32_t key)`根据键找对正确内存坐标:
 
 ```c
 -Cursor* table_start(Table* table) {
@@ -30,11 +30,11 @@
 +}
 ```
 
-以上，如果有15个元素，但是仅打印了7个，因为在`void(*cursor_advance)(Cursor* cursor)`方法中直接判别为`cursor->end_of_table = true;` 了.
+这步修改完执行`chmod +x part7.sh && ./part7.sh`, 输入 15 个元素，但是仅打印了 7 个。因为在`void(*cursor_advance)(Cursor* cursor)`方法中直接判别为`cursor->end_of_table = true;`, 打印了 7 个后即停止了。
 
-这时我们为节点内容添加`Next`属性，来表达下一页的页面(节点)索引。并且由于新加入的属性，之前的数据文件内容将不适用，需要删除测试的数据文件aa.db!
+为了解决不能跳节点问题，我们为节点内容添加`Next`属性，来表达下一页的页面(节点)索引。并且由于新加入的属性，之前的数据文件内容将不适用，需要删除测试的数据文件 aa.db!
 
-首先为LEAF_NODE_HEADER_SIZE 中加入NEXT内存存储:
+首先为 LEAF_NODE_HEADER_SIZE 中加入 NEXT 内存存储:
 
 ```c
 const uint32_t LEAF_NODE_NUM_CELLS_SIZE = sizeof(uint32_t);
@@ -69,20 +69,15 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
 + *leaf_node_next_leaf(old_node) = new_page_num;
 ```
 
-最后，由于select会调用`void(*cursor_advance)(Cursor*)`获取下一个元素，并且判别是否到了末尾，所以此方法内我们做更新cursor->page_num 和判别end_of_table:
+最后，由于 select 会调用`void(*cursor_advance)(Cursor*)`获取下一个元素，并且判别是否到了末尾，所以此方法内我们做更新 cursor->page_num 和判别 end_of_table:
 
 ```c
 void cursor_advance(Cursor* cursor) {
--  cursor->cell_num += 1;
--
--  void* node = get_page(table->pager, cursor->page_num);
+  uint32_t page_num = cursor->page_num;
+  void* node = get_page(cursor->table->pager, page_num);
 -  if (cursor->cell_num >= *leaf_node_num_cells(node)) {
 -    cursor->end_of_table = true;
 -  }
-+  uint32_t page_num = cursor->page_num;
-+  void* node = get_page(cursor->table->pager, page_num);
-+
-+  cursor->cell_num += 1;
 +  if (cursor->cell_num >= *leaf_node_num_cells(node)) {
 +    // 拿出下一页坐标，next_page_num == 0 则表示没有下一页了; 否则进入新的一页
 +    uint32_t next_page_num = *leaf_node_next_leaf(node);
