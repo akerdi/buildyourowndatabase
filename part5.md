@@ -189,24 +189,24 @@ Table* db_open(const char* filename) {
 +   exit(EXIT_FAILURE);
 + }
 +}
-void create_new_root(Table* table, uint32_t right_child_page_num) {
-  void* root = get_page(table->pager, table->root_page_num);
-  void* right_child = get_page(table->pager, right_child_page_num);
-  // 新建left_child
-  uint32_t left_child_page_num = get_unused_page_num(table->pager);
-  void* left_child = get_page(table->pager, left_child_page_num);
-  // 将root数据拷贝至left_child
-  memcpy(left_child, root, PAGE_SIZE);
-  set_node_root(left_child, false);
-  // root数据内容将重写为internal格式，并且填充内容
-  initialize_internal_node(root);
-  set_node_root(root, true);
-  *internal_node_num_keys(root) = 1;
-  *internal_node_child(root, 0) = left_child_page_num;
-  uint32_t left_child_max_key = get_node_max_key(left_child);
-  *internal_node_key(root, 0) = left_child_max_key;
-  *internal_node_right_child(root) = right_child_page_num;
-}
++void create_new_root(Table* table, uint32_t right_child_page_num) {
++ void* root = get_page(table->pager, table->root_page_num);
++ void* right_child = get_page(table->pager, right_child_page_num);
++ // 新建left_child
++ uint32_t left_child_page_num = get_unused_page_num(table->pager);
++ void* left_child = get_page(table->pager, left_child_page_num);
++ // 将root数据拷贝至left_child
++ memcpy(left_child, root, PAGE_SIZE);
++ set_node_root(left_child, false);
++ // root数据内容将重写为internal格式，并且填充内容
++ initialize_internal_node(root);
++ set_node_root(root, true);
++ *internal_node_num_keys(root) = 1;
++ *internal_node_child(root, 0) = left_child_page_num;
++ uint32_t left_child_max_key = get_node_max_key(left_child);
++ *internal_node_key(root, 0) = left_child_max_key;
++ *internal_node_right_child(root) = right_child_page_num;
++}
 ```
 
 以上实现了本章的目标: 切分叶子节点(14 + 1 = x + (15-x)), 先切出来 right_child, 然后再切出来 left_child, 然后设置 root 节点后，写入各自数据。
