@@ -1,14 +1,16 @@
 # Part3
 
-我们要将表结构从一个未排序的原始数据改为B-Tree。我们要在接下来的好多章节去实现这样一个相当大的改变。在Part3结束时，我们将实现定义叶子节点，并且支持插入 key/value 数据对到单一节点的树。在开始前，我们再次回顾下为什么我们要将数据结构换称为树形结构。
+我们要将表结构从一个未排序的原始数据改为B-Tree。我们要在接下来的好多章节去实现这样一个相当大的改变。
+
+在Part3结束时, 我们将实现定义叶子节点, 并且支持插入 key/value数据对 到单一节点的树。在开始前, 我们再次回顾下为什么我们要将数据结构换成为树形结构。
 
 ## 替换数据结构
 
-Part2中的数据结构中，每个页面仅保存rows(没有元数据)，这使得空间利用相当的有效率。插入也是非常快的因为我们就是直接拼接到最后嘛。然而，为了找到给定的row只能通过遍历整个table。如果要删除一个row，我们只能通过挪动后面的所有数据都往前一格来填补那个洞。
+Part2中的数据结构中, 每个页面仅保存rows(没有元数据), 这使得空间利用相当的有效率。插入也是非常快的, 因为我们就是直接拼接到最后嘛。然而, 为了找到给定的row只能通过遍历整个table。如果要删除一个row, 我们只能通过挪动后面的所有数据都往前一格来填补那个洞。
 
-如果我们保存数据时保证rows 被id排序，我们就能使用二分查找法找到某个id。然而插入会变慢，因为我们还是需要挪动很多rows解决空间问题。
+如果我们保存数据时保证rows 被id排序, 我们就能使用二分查找法找到某个id。然而插入会变慢, 因为我们还是需要挪动很多rows解决空间问题。
 
-除了上述方法，我们要用树形结构。树上每个节点都包含很多rows，我们在各个节点上记录相关信息，来清楚知道各自包含rows数量。而且我们还有Internal类型的节点来存储非rows数据的节点的数据。与如此庞大的数据文件交互，我们同时完成快速插入、删除和查询。
+除了上述方法, 我们要用树形结构。树上每个节点都包含很多rows, 我们在各个节点上记录相关信息, 来清楚知道各自包含rows数量。而且我们还有Internal类型的节点来存储非rows数据的节点的数据。与如此庞大的数据文件交互, 我们同时完成快速插入、删除和查询。
 
 ||**Unsorted Array of rows**|**Sorted Array of rows**|**Tree of nodes**|
 |-|-|-|-|
@@ -24,9 +26,9 @@ Part2中的数据结构中，每个页面仅保存rows(没有元数据)，这使
 
 `typedef enum { NODE_INTERNAL, NODE_LEAF } NodeType;`
 
-每个节点对应一个页面。内部节点支持存储key(子节点最大值id)和页面pointer(子节点页面坐标index)。btree 向pager询问获得要操作、查询的页面坐标，然后获得回该页面的内存地址(void*)。页面数据在数据文件中是一个接一个排列存储的。
+每个节点对应一个页面。内部节点支持存储key(子节点最大值id)和页面pointer(子节点页面坐标index)。btree 向pager询问获得要操作、查询的页面坐标, 然后获得回该页面的内存地址(void*)。页面数据在数据文件中是一个接一个排列存储的。
 
-节点需要一些元数据，我们将这些元数据放到页面的开头。每个节点会存储对应的节点类型、是否是root节点、还有他的父节点pointer(父节点页面坐标index) - 作用是找到这个节点的兄弟节点。我为这些元数据字段申明了固定大小和偏移:
+节点需要一些元数据, 我们将这些元数据放到页面的开头。每个节点会存储对应的节点类型、是否是root节点、还有他的父节点pointer(父节点页面坐标index) - 作用是找到这个节点的兄弟节点。我为这些元数据字段申明了固定大小和偏移:
 
 ```c
 // Common Node Header Layout
@@ -73,13 +75,13 @@ uint32_t* leaf_node_value(void* node, uint32_t cell_num) {
 void initialize_leaf_node(void* node) { *leaf_node_num_cells(node) = 0; }
 ```
 
-根据上面的定义，页面数据分布就像下图这样:
+根据上面的定义, 页面数据分布就像下图这样:
 
 ![Our leaf node format](./images/part3/leaf-node-format.png)
 
-在每个页面头部放这些元数据，在空间利用率上是有点低下的，但这使得我们更有效率的去拿到那些数据。
+在每个页面头部放这些元数据, 在空间利用率上是有点低下的, 但这使得我们更有效率的去拿到那些数据。
 
-上面这些方法便于找到内存点，并且方便读/写.
+上面这些方法便于找到内存点, 并且方便读/写.
 
 ## 改变Pager 和Table
 
@@ -106,7 +108,7 @@ typedef struct {
 } Cursor;
 ```
 
-由于每个节点都要占据一整个页面，不管他是不是满的。所以我们要改造下写入到数据文件时的方案 - 整个页面直接写进去即可:
+由于每个节点都要占据一整个页面, 不管他是不是满的。所以我们要改造下写入到数据文件时的方案 - 整个页面直接写进去即可:
 
 ```c
 -void pager_flush(Pager* pager, uint32_t page_num, uint32_t size) {
@@ -128,7 +130,7 @@ void db_close(Table* table) {
       pager->pages[i] = NULL;
     }
   }
-  // 上面是整页写入的，就不需要补余下的
+  // 上面是整页写入的, 就不需要补余下的
 - uint32_t additional_num_rows = table->row_nums % ROW_PER_PAGES;
 - if (additional_num_rows > 0) {
 -   const page_num = full_num_rows;
@@ -141,7 +143,7 @@ void db_close(Table* table) {
   ...
 ```
 
-db_open 修改，当读取空数据库时，为内存数据写入num_cell个数为0:
+db_open 修改, 当读取空数据库时, 为内存数据写入num_cell个数为0:
 
 ```c
 Table* db_open(const char* filename) {
@@ -153,7 +155,7 @@ Table* db_open(const char* filename) {
 - table->num_rows = num_rows;
 + table->root_page_num = 0;
 + if (pager->num_pages == 0) {
-    // 当读取空数据库时，为内存数据写入num_cell个数为0
+    // 当读取空数据库时, 为内存数据写入num_cell个数为0
 +   void* root_node = get_page(pager, 0);
 +   initialize_leaf_node(root_node);
 + }
@@ -161,7 +163,7 @@ Table* db_open(const char* filename) {
 }
 ```
 
-为了知道文件中Page数量，pager_open 时要计算；获取指定页面大于当前页面数量时，Page数量 += 1:
+为了知道文件中Page数量, pager_open 时要计算；获取指定页面大于当前页面数量时, Page数量 += 1:
 
 ```c
 Pager* pager_open(const char* filename) {
@@ -171,7 +173,7 @@ Pager* pager_open(const char* filename) {
   pager->file_length = read_bytes;
 + pager->num_pages = (read_bytes / PAGE_SIZE);
 
-  // 页面存储都是整页，多余数据肯定非正确的
+  // 页面存储都是整页, 多余数据肯定非正确的
 + if (read_bytes % PAGE_SIZE != 0) {
 +   printf("Db file is not a whole number of pages. Corrupt file.\n");
 +   exit(EXIT_FAILURE);
@@ -236,13 +238,13 @@ void cursor_advance(Cursor* cursor) {
 }
 ```
 
-以上完成了准备阶段，还差一点点完成叶子节点的数据插入。
+以上完成了准备阶段, 还差一点点完成叶子节点的数据插入。
 
 ## 插入到叶子节点
 
-这篇文章仅实现单个节点的树(相对之前插入数据量退化，当前仅能插入13个元素，但只是暂时的)。
+这篇文章仅实现单个节点的树(相对之前插入数据量退化, 当前仅能插入13个元素, 但只是暂时的)。
 
-修改execute_insert，1. 仅能插入 LEAF_NODE_MAX_CELLS; 2. serialize_row直接写入改为新方法 - void(*leaf_node_insert)(Cursor*, uint32_t, Row*):
+修改execute_insert, 1. 仅能插入 LEAF_NODE_MAX_CELLS; 2. serialize_row直接写入改为新方法 - void(*leaf_node_insert)(Cursor*, uint32_t, Row*):
 
 ```c
 ExecuteResult execute_insert(Statement* statement, Table* table) {
@@ -268,7 +270,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 +   printf("Need to implement splitting a leaf node.\n");
 +   exit(EXIT_FAILURE);
 + }
-  // 当总数为10，准备写入2，则需要内存挪移，> 2 的内存都向外挪动一个元素大小。为置放2腾出空间
+  // 当总数为10, 准备写入2, 则需要内存挪移, > 2 的内存都向外挪动一个元素大小。为置放2腾出空间
 + if (cursor->cell_num < num_cells) {
 +   for (uint32_t i = num_cells; i > cursor->cell_num; i--) {
 +     memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i - 1), LEAF_NODE_CELL_SIZE);
@@ -354,7 +356,7 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
               // -- 1 : 1
               // -- 2 : 2
 
-可以看到插入的数据还没有排序，待接下来继续优化。
+可以看到插入的数据还没有排序, 待接下来继续优化。
 
 ## 下一章
 
