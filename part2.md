@@ -46,7 +46,7 @@ void cursor_advance(Cursor* cursor) {
 
 修改 `void* row_slot(Table*, uint32_t)` 为 `void* cursor_value(Cursor*)`
 
-```
+```c
 - void* row_slot(Table* table, uint32_t row_num) {
 + void* cursor_value(Cursor* cursor) {
   Pager* pager = table->pager;
