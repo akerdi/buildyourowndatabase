@@ -108,7 +108,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 +     min = index + 1;
 +   }
 + }
-+ cursor->cell_num = min_index;
++ cursor->cell_num = min;
 + return cursor;
 +}
 ```
