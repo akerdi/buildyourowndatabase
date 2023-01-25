@@ -89,7 +89,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 + uint32_t num_cells = *leaf_node_num_cells(node);
 
 + Cursor* cursor = malloc(sizeof(Cursor));
-+ cursor* table = table;
++ cursor->table = table;
 + cursor->page_num = page_num;
   // 采用二分法逐步逼近得到具体位置坐标
 + uint32_t min = 0;
