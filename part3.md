@@ -270,7 +270,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 +   printf("Need to implement splitting a leaf node.\n");
 +   exit(EXIT_FAILURE);
 + }
-  // 当总数为10, 准备写入2, 则需要内存挪移, > 2 的内存都向外挪动一个元素大小。为置放2腾出空间
+  // 当总数量为10, 写入索引下表2, > 2 的内存都向右挪动一个元素大小。为置放位置2腾出空间
 + if (cursor->cell_num < num_cells) {
 +   for (uint32_t i = num_cells; i > cursor->cell_num; i--) {
 +     memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i - 1), LEAF_NODE_CELL_SIZE);
