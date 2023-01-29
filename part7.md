@@ -2,7 +2,7 @@
 
 上一章节后，我们发现 select 时，数据是 (2 1 1).
 
-原因是 select 仅找了 root 节点，2 1 1 对应之前留下的的数据。所以这章就是解决 select，并且是多个节点间 select。
+原因是 select 仅找了 root 节点，2 1 1 对应之前留下的的数据。所以这章目标是解决多个节点间 select。
 
 首先修复 table_start，他的作用是通过`Cursor*(*table_start)(Table* table, uint32_t key)`根据键找对正确内存坐标:
 
@@ -32,7 +32,7 @@
 
 这步修改完执行`chmod +x part7.sh && ./part7.sh`, 输入 15 个元素，但是仅打印了 7 个。因为在`void(*cursor_advance)(Cursor* cursor)`方法中直接判别为`cursor->end_of_table = true;`, 打印了 7 个后即停止了。
 
-为了解决不能跳节点问题，我们为节点内容添加`Next`属性，来表达下一页的页面(节点)索引。并且由于新加入的属性，之前的数据文件内容将不适用，需要删除测试的数据文件 aa.db!
+为了解决不能跳节点问题，我们为节点内容添加`Next`属性，来表达下一页的页面(节点)索引。并且由于新加入的属性，之前的数据文件内容将不适用，需要删除测试的数据文件!
 
 首先为 LEAF_NODE_HEADER_SIZE 中加入 NEXT 内存存储:
 
