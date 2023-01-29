@@ -75,6 +75,8 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
 void cursor_advance(Cursor* cursor) {
   uint32_t page_num = cursor->page_num;
   void* node = get_page(cursor->table->pager, page_num);
+  
+  cursor->cell_num += 1;
 -  if (cursor->cell_num >= *leaf_node_num_cells(node)) {
 -    cursor->end_of_table = true;
 -  }
