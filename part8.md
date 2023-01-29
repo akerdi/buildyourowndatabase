@@ -36,7 +36,7 @@ Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
 ```c
 // 新增读写node_parent 的方法
 +uint32_t* node_parent(void* node) {
-+ return node + PARENT_NODE_OFFSET;
++ return node + PARENT_POINTER_OFFSET;
 +}
 // 更新内部节点key 的内存
 +void update_internal_node_key(void* node, uint32_t old_key, uint32_t new_key) {
