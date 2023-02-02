@@ -242,9 +242,9 @@ void cursor_advance(Cursor* cursor) {
 
 ## 插入到叶子节点
 
-这篇文章仅实现单个节点的树(相对之前插入数据量退化, 当前仅能插入13个元素, 但只是暂时的)。
-
 修改execute_insert, 1. 仅能插入 LEAF_NODE_MAX_CELLS; 2. serialize_row直接写入改为新方法 - void(*leaf_node_insert)(Cursor*, uint32_t, Row*):
+
+> 这篇文章仅实现单个节点的树(相对之前插入数据量退化, 当前仅能插入13个元素, 但只是暂时的)
 
 ```c
 ExecuteResult execute_insert(Statement* statement, Table* table) {
