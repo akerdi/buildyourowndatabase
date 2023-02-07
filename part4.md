@@ -60,7 +60,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
   ...
 ```
 
-替换 `Cursor*(*table_end)(Table*)` 为 `Cursor* (*table_find)(Table*,uint32_t)`, 目的是table_end 仅支持插入到最后；但table_find 支持找到对应的page的指定位置:
+替换 `Cursor*(*table_end)(Table*)` 为 `Cursor*(*table_find)(Table*,uint32_t)`, 原因是 table_end 仅支持插入到最后；但 table_find 支持找到对应的page和对应的插入位置:
 
 ```c
 -Cursor* table_end(Table* table) {
