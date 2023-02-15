@@ -61,7 +61,7 @@ void create_new_root(Table* table, uint32_t right_child_page_num) {
 void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
   void* old_node = get_page(cursor->table->pager, cursor->page_num);
   // 获取源节点最大的key
-+  uint32_t old_max = get_node_max_key(old_node);
++  uint32_t old_node_old_max = get_node_max_key(old_node);
   uint32_t new_page_num = get_unused_page_num(cursor->table->pager);
   void* new_node = get_page(cursor->table->pager, new_page_num);
   initialize_leaf_node(new_node);
@@ -76,12 +76,11 @@ void leaf_node_split_and_insert(Cursor* cursor, uint32_t key, Row* value) {
     // 上面已经将一个满的页面切分成两个页面
     // 且得知old_node 不是root节点，所以目标就是更新原来的internal节点中元素
 +    uint32_t parent_page_num = *node_parent(old_node);
-+    uint32_t new_max = get_node_max_key(old_node); // 上面刚更新过了，所以是new_max
++    uint32_t old_node_new_max = get_node_max_key(old_node); // 上面刚更新过了，所以是new_max
 +    void* parent = get_page(cursor->table->pager, parent_page_num);
-    // 更新父节点中max大小
-    // 如录入1~20后，录入21,
-    // 此时替换父节点中原old_max-->new_max；(仅替换，新增的则不管)
-+    update_internal_node_key(parent, old_max, new_max);
+    // 更新父节点old_node 原来对应的信息: old_node_old_max-->old_node_new_max
++    update_internal_node_key(parent, old_node_old_max, old_node_new_max);
+    // 剩余工作是决定new_page_num位置(right_child ? 还是 left_childs)
 +    internal_node_insert(cursor->table, parent_page_num, new_page_num);
   }
 }
