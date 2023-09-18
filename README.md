@@ -2,9 +2,9 @@
 
 本讲义是给有C语言基础的人学习数据库知识准备的，如果还没有C语言基础的同学，推荐[阮一峰 C 语言教程](https://wangdoc.com/clang/), [buildyourownlisp](https://github.com/akerdi/buildyourownlisp).
 
-基于cstack开源教程[`Let's Build a Simple Database`](https://cstack.github.io/db_tutorial/)中文翻译学习。
+基于cstack开源教程[`Let's Build a Simple Database`](https://cstack.github.io/db_tutorial/)的中文浓缩翻译及学习过程。
 
-原作part 1 ~ part 6直接合并为一章(对应本讲义的[Part1 - 浓缩讲解 1~6章](./part1.md)). 原作使用ruby-rspec作为测试用例框架, 但是本讲义仅做代码测试(如[part1.sh](./part1.sh))。
+原作part 1 ~ part 6直接合并为一章(对应本讲义的[Part1 - 浓缩讲解 1~6章](./part1.md)). 原作使用ruby-rspec作为测试用例框架, 但是本讲义仅做代码测试(如[part1.sh](./part1.sh))，旨在降低难度。
 
 重点难点在本讲义是[Part3 - 实现叶子节点](./part3.md)、[Part5 - 切分叶子节点、引出内部节点](./part5.md)这两个章节。
 
